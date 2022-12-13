@@ -132,7 +132,7 @@ bool SimulatorBarnesHut::update(SDL_Renderer* s, unsigned int t)
 		{
 			px = (int)positions[t * particlesCount * 2 + i * 2 + 0];
 			py = (int)positions[t * particlesCount * 2 + i * 2 + 1];
-			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 1.0 * 0xFF);
+			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.6 * 0xFF);
 			SDL_RenderDrawPoint(s, (px - viewX) * viewZoom - viewHW, (py - viewY) * viewZoom - viewHH);
 		}
 	}
@@ -167,7 +167,7 @@ bool SimulatorBarnesHut::update(SDL_Renderer* s, unsigned int t)
 		//draw particles
 		for (int i = 0; i < particlesCount; i++)
 		{
-			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.4 * 0xFF);
+			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.6 * 0xFF);
 			SDL_Rect r;
 			r.x = (particles[i].x - viewX) * viewZoom - viewHW;
 			r.y = (particles[i].y - viewY) * viewZoom - viewHH;
@@ -197,6 +197,7 @@ void SimulatorBarnesHut::onEnd(unsigned int t)
 	//save positions recording
 	if (record && !playFromRecord)
 	{
+		printf("Saving recording...\n");
 		std::ofstream filepos("recording.bin", std::ios::out | std::ofstream::binary);
 		filepos.write(reinterpret_cast<const char *>(&t), sizeof(int));
 		filepos.write(reinterpret_cast<const char *>(&positions[0]), sizeof(short) * positions.size());

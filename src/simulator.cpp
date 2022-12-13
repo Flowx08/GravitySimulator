@@ -2,6 +2,8 @@
 #include <SDL2_ttf/SDL_ttf.h>
 #include <SDL2/SDL.h>
 #include <assert.h>
+#include <type_traits>
+#include "config.hpp"
 
 Simulator::Simulator()
 {
@@ -10,12 +12,14 @@ Simulator::Simulator()
 	font = NULL;
 	
 	//settings
-	gForce = 0.01 * 40;
-	record = false;
-	recordLimit = false;
-	recordForT = 60 * 5;
-	playFromRecord = true;
+	gForce = config::gForce;
+	record = config::record;
+	viewZoom = config::startViewZoom;
+	recordLimit = config::recordLimit;
+	recordForT = config::recordForT;
+	playFromRecord = config::playFromRecord;
 	recordFilename = "recording.bin";
+	showUI = config::showUI;
 }
 
 void Simulator::initializeParticles(SDL_Renderer* r, unsigned int count) {}
@@ -25,6 +29,8 @@ void Simulator::handleKeyDown(unsigned int key) {}
 
 void Simulator::drawUI(SDL_Renderer* r)
 {
+	if (!showUI) return;
+
 	if (font == NULL) {
 		font = FC_CreateFont();
 		FC_LoadFont(font, r, "menlo-regular.ttf", 14, FC_MakeColor(255,255,255,255), TTF_STYLE_NORMAL);  

@@ -35,6 +35,7 @@ class Simulator
 
 		//UI
 		FC_Font* font;
+		bool showUI;
 		
 		//recording
 		bool record;

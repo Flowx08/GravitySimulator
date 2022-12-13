@@ -1,8 +1,10 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#include <cmath>
 #include <cstdio>
 #include <stdio.h>
 #include <numeric>
+#include <sys/syslimits.h>
 #include <vector>
 #include <iostream>
 #include "SDL2/SDL_stdinc.h"
@@ -11,9 +13,11 @@
 #include "simulator_precise.hpp"
 #include "simulator_barneshut.hpp"
 #include "util.hpp"
+#include "config.hpp"
 
 int main(int argc, char* argv[]) {
 	
+
 	srand((unsigned int)NULL);
 
 	Simulator* simulator = NULL;
@@ -58,7 +62,7 @@ int main(int argc, char* argv[]) {
 	//create simulator
 	//simulator = (Simulator*)new SimulatorPrecise();
 	simulator = (Simulator*)new SimulatorBarnesHut();
-	simulator->initializeParticles(s, 300000);
+	simulator->initializeParticles(s, config::particlesCount);
 
 	SDL_Event e;
 	Uint64 start, end;
@@ -109,7 +113,6 @@ int main(int argc, char* argv[]) {
 
 		end = SDL_GetPerformanceCounter();
 		elapsedMs = (end - start) / (float)SDL_GetPerformanceFrequency();
-		printf("%f\n", elapsedMs);
 		simulator->FPS = 1.f / elapsedMs;
 
 		start = SDL_GetPerformanceCounter();
