@@ -11,9 +11,6 @@ class SimulatorPrecise : public Simulator {
 		void initializeParticles(SDL_Renderer* r, unsigned int count);
 		bool update(SDL_Renderer* r, unsigned int t);
 		void onEnd(unsigned int t);
-	
-	private:
-		const float gForce = 0.01 * 40;
 
 };
 

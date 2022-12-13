@@ -24,6 +24,7 @@ class Simulator
 	protected:
 		//parameters
 		Uint32 particlesCount;
+		float gForce;
 		float viewX;
 		float viewY;
 		float viewZoom;
@@ -36,12 +37,12 @@ class Simulator
 		FC_Font* font;
 		
 		//recording
-		const bool record = false;
-		const bool recordLimit = false;
-		const unsigned int recordForT = 60 * 5;
-		const bool playFromRecord = true;
-		const std::string recordFilename = "recording.bin";
-		unsigned int playlenght = 0;
+		bool record;
+		bool recordLimit;
+		unsigned int recordForT;
+		bool playFromRecord;
+		std::string recordFilename;
+		unsigned int playlenght;
 		std::vector<short> positions;
 
 

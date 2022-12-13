@@ -18,9 +18,8 @@ class SimulatorBarnesHut : public Simulator {
 	private:
 		void drawTreeBoundaries(SDL_Renderer* s, BHQuadTree* node);
 		
-		bool drawTree = false;
-		const float gForce = 0.01 * 80;
-		BHQuadTree* spaceTree = NULL;
+		bool drawTree;
+		BHQuadTree* spaceTree;
 };
 
 #endif

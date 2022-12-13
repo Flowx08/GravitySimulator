@@ -6,7 +6,16 @@
 Simulator::Simulator()
 {
 	movementSpeed = 1.0;
+	playlenght = 0;
 	font = NULL;
+	
+	//settings
+	gForce = 0.01 * 40;
+	record = false;
+	recordLimit = false;
+	recordForT = 60 * 5;
+	playFromRecord = true;
+	recordFilename = "recording.bin";
 }
 
 void Simulator::initializeParticles(SDL_Renderer* r, unsigned int count) {}

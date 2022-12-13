@@ -17,6 +17,8 @@ void SimulatorBarnesHut::initializeParticles(SDL_Renderer* r, unsigned int count
 	SDL_GetRendererOutputSize(r, &windowWidth, &windowHeight);
 	
 	//setup simulator parameters
+	drawTree = false;
+	spaceTree = NULL;
 	viewX = (float)windowWidth/2;
 	viewY = (float)windowHeight/2;
 	viewHW = -(float)windowWidth/2;
