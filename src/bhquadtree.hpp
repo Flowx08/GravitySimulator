@@ -9,8 +9,7 @@
 class BHQuadTree
 {
 	public:
-		const static unsigned int NODE_CAPACITY = 64;
-
+		BHQuadTree();
 		BHQuadTree(float cx, float cy, float hd); 
 
 		//insert particle in the correct leaf
@@ -45,10 +44,15 @@ class BHQuadTree
 		double cxMass, cyMass, totalMass;
 		unsigned int pcount;
 		Particle* particle;
+		
+		static unsigned int usedNodes;
 
 	private:
 		//deallocate all nodes except root
 		static void __free(BHQuadTree* node);
+
+		static std::vector<BHQuadTree> nodes;
+		static BHQuadTree* getNewNode(float cx, float cy, float hd);
 
 		AABB boundary;
 };

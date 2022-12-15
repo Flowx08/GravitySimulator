@@ -17,7 +17,7 @@ class Simulator
 		virtual void onEnd(unsigned int t);
 		virtual void handleKeyDown(unsigned int key);
 
-		void drawUI(SDL_Renderer* r);
+		void drawUI(SDL_Renderer* r, unsigned int t);
 
 		float FPS;
 	
@@ -30,6 +30,7 @@ class Simulator
 		float viewZoom;
 		float viewHW;
 		float viewHH;
+		bool drawParticles;
 		float movementSpeed;
 		std::vector<Particle> particles;
 
@@ -45,6 +46,9 @@ class Simulator
 		std::string recordFilename;
 		unsigned int playlenght;
 		std::vector<short> positions;
+
+		//hardware
+		double memoryUsage;
 
 
 };

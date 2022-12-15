@@ -14,6 +14,7 @@
 #include "simulator_barneshut.hpp"
 #include "util.hpp"
 #include "config.hpp"
+#include <omp.h>
 
 int main(int argc, char* argv[]) {
 	
@@ -26,6 +27,9 @@ int main(int argc, char* argv[]) {
 
 	SDL_Init(SDL_INIT_EVERYTHING);              // Initialize SDL2
 	TTF_Init();
+	
+	omp_set_num_threads(config::cpuCores);
+	printf("CPU cores: %d\n", config::cpuCores);
 
 	//Get screen size
 	SDL_DisplayMode dm;
@@ -60,8 +64,8 @@ int main(int argc, char* argv[]) {
 	SDL_SetRenderDrawBlendMode(s, SDL_BLENDMODE_BLEND);
 
 	//create simulator
-	//simulator = (Simulator*)new SimulatorPrecise();
-	simulator = (Simulator*)new SimulatorBarnesHut();
+	if (std::string(config::mode) == "precise") simulator = (Simulator*)new SimulatorPrecise();
+	else simulator = (Simulator*)new SimulatorBarnesHut();
 	simulator->initializeParticles(s, config::particlesCount);
 
 	SDL_Event e;
@@ -96,7 +100,7 @@ int main(int argc, char* argv[]) {
 		running = simulator->update(s, t) && running;
 		
 		//Draw UI
-		simulator->drawUI(s);
+		simulator->drawUI(s, t);
 		
 		// Set the color to what was before
 		SDL_SetRenderDrawColor(s, 0x00, 0x00, 0x00, 0xFF);

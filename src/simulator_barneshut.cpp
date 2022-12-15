@@ -135,6 +135,11 @@ bool SimulatorBarnesHut::update(SDL_Renderer* s, unsigned int t)
 			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.6 * 0xFF);
 			SDL_RenderDrawPoint(s, (px - viewX) * viewZoom - viewHW, (py - viewY) * viewZoom - viewHH);
 		}
+		
+		memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer
+				BHQuadTree::usedNodes * sizeof(BHQuadTree) + //quadtree
+				positions.size() * sizeof(short) //recording buffer
+				) / 1000000.f;
 	}
 	else
 	{
@@ -146,6 +151,7 @@ bool SimulatorBarnesHut::update(SDL_Renderer* s, unsigned int t)
 		}
 		
 		//compute acceleration
+		#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < particlesCount; i++)
 			BHQuadTree::computeAttraction(spaceTree, &particles[i], 0.9, gForce);
 
@@ -158,6 +164,7 @@ bool SimulatorBarnesHut::update(SDL_Renderer* s, unsigned int t)
 			particles[i].y += particles[i].vy;
 			boundarySize = fmax(boundarySize, abs(particles[i].x - viewX));
 			boundarySize = fmax(boundarySize, abs(particles[i].y - viewY));
+
 			if (record) {
 				positions.push_back((short)(particles[i].x));
 				positions.push_back((short)(particles[i].y));
@@ -165,22 +172,29 @@ bool SimulatorBarnesHut::update(SDL_Renderer* s, unsigned int t)
 		}
 
 		//draw particles
-		for (int i = 0; i < particlesCount; i++)
-		{
-			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.6 * 0xFF);
-			SDL_Rect r;
-			r.x = (particles[i].x - viewX) * viewZoom - viewHW;
-			r.y = (particles[i].y - viewY) * viewZoom - viewHH;
-			r.w = fmax(1.0, viewZoom);
-			r.h = fmax(1.0, viewZoom);
-			SDL_RenderFillRect(s, &r);
-			//SDL_RenderDrawPoint(s, (particles[i].x - viewX) * viewZoom - viewHW, (particles[i].y - viewY) * viewZoom - viewHH);
+		if (drawParticles) {
+			for (int i = 0; i < particlesCount; i++)
+			{
+				SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.6 * 0xFF);
+				SDL_Rect r;
+				r.x = (particles[i].x - viewX) * viewZoom - viewHW;
+				r.y = (particles[i].y - viewY) * viewZoom - viewHH;
+				r.w = fmax(1.0, viewZoom);
+				r.h = fmax(1.0, viewZoom);
+				SDL_RenderFillRect(s, &r);
+				//SDL_RenderDrawPoint(s, (particles[i].x - viewX) * viewZoom - viewHW, (particles[i].y - viewY) * viewZoom - viewHH);
+			}
 		}
 
 		//update quadtree
 		spaceTree->clear(viewX, viewY, boundarySize);
 		for (int i = 0; i < particlesCount; i++)
 			spaceTree->insert(&particles[i]);
+
+		memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer
+				BHQuadTree::usedNodes * sizeof(BHQuadTree) + //quadtree
+				positions.size() * sizeof(short) //recording buffer
+				) / 1000000.f;
 		
 		//draw quadtree
 		if (drawTree) {

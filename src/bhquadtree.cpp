@@ -1,6 +1,53 @@
 #include "bhquadtree.hpp"
 #include <algorithm>
 #include <math.h>
+#include "config.hpp"
+
+std::vector<BHQuadTree> BHQuadTree::nodes = std::vector<BHQuadTree>(16);
+unsigned int BHQuadTree::usedNodes = 0;
+
+BHQuadTree* BHQuadTree::getNewNode(float cx, float cy, float hd) {
+
+	//increase allocation if needed
+	if (usedNodes == nodes.size()) {
+		nodes.push_back(BHQuadTree());
+		printf("%d\n", usedNodes);
+	}
+	
+	//clean node for usage
+	nodes[usedNodes].northEast = NULL;
+	nodes[usedNodes].northWest = NULL;
+	nodes[usedNodes].southWest = NULL;
+	nodes[usedNodes].southEast = NULL;
+	nodes[usedNodes].cxMass = 0;
+	nodes[usedNodes].cyMass = 0;
+	nodes[usedNodes].totalMass = 0;
+	nodes[usedNodes].pcount = 0;
+	nodes[usedNodes].particle = NULL;
+	nodes[usedNodes].boundary.cx = cx;
+	nodes[usedNodes].boundary.cy = cy;
+	nodes[usedNodes].boundary.hd = hd;
+	
+	//assign node
+	return &nodes[usedNodes++];
+}
+
+BHQuadTree::BHQuadTree()
+{
+	boundary.cx = 100;
+	boundary.cy = 100;
+	boundary.hd = 50;
+	northWest = NULL;
+	northEast = NULL;
+	southWest = NULL;
+	southEast = NULL;
+
+	cxMass = 0;
+	cyMass = 0;
+	totalMass = 0;
+	pcount = 0;
+	particle = NULL;
+}
 
 BHQuadTree::BHQuadTree(float cx, float cy, float hd)
 {
@@ -43,7 +90,17 @@ bool BHQuadTree::insert(Particle* p)
 	/*
 	if (isLeaf())
 	{
-		if (pcount == 0 || (fabs(p->x - cxMass/totalMass) < 1.0 && fabs(p->y - cyMass/totalMass) < 1.0)) {
+		if (pcount == 0) {
+			cxMass += p->x * p->mass;
+			cyMass += p->y * p->mass;
+			totalMass += p->mass;
+			pcount++;
+			particle = p;
+			return true;
+		}
+		else if (sqrt((p->x - cxMass/totalMass) * (p->x - cxMass/totalMass)
+					+ (p->y - cyMass/totalMass) * (p->y - cyMass/totalMass)) < config::minForceDistance)
+		{
 			cxMass += p->x * p->mass;
 			cyMass += p->y * p->mass;
 			totalMass += p->mass;
@@ -80,6 +137,13 @@ void BHQuadTree::subdivide()
 	northEast = new BHQuadTree(boundary.cx + boundary.hd/2, boundary.cy - boundary.hd/2, boundary.hd/2);
 	southWest = new BHQuadTree(boundary.cx - boundary.hd/2, boundary.cy + boundary.hd/2, boundary.hd/2);
 	southEast = new BHQuadTree(boundary.cx + boundary.hd/2, boundary.cy + boundary.hd/2, boundary.hd/2);
+	usedNodes += 4;	
+	/*
+	northWest = getNewNode(boundary.cx - boundary.hd/2, boundary.cy - boundary.hd/2, boundary.hd/2);
+	northEast = getNewNode(boundary.cx + boundary.hd/2, boundary.cy - boundary.hd/2, boundary.hd/2);
+	southWest = getNewNode(boundary.cx - boundary.hd/2, boundary.cy + boundary.hd/2, boundary.hd/2);
+	southEast = getNewNode(boundary.cx + boundary.hd/2, boundary.cy + boundary.hd/2, boundary.hd/2);
+	*/
 	
 	northWest->insert(particle);
 	northEast->insert(particle);
@@ -127,6 +191,7 @@ void BHQuadTree::clear(float cx, float cy, float hd)
 	boundary.cx = cx;
 	boundary.cy = cy;
 	boundary.hd = hd;
+	usedNodes = 0;
 }
 
 bool BHQuadTree::isLeaf()
@@ -152,7 +217,7 @@ void BHQuadTree::computeAttraction(BHQuadTree* node, Particle* p, const float al
 	distY = (node->cyMass / node->totalMass - p->y);
 	dist_sqr = distX * distX + distY * distY;
 	dist = sqrt(dist_sqr);
-	if (dist < 1) return;
+	if (dist < config::minForceDistance) return;
 
 	if ((node->getBoundary().hd * 2 / dist < alpha) || node->isLeaf())
 	{

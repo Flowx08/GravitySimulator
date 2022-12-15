@@ -2,6 +2,7 @@
 #include "util.hpp"
 #include <fstream>
 #include <sstream>
+#include "config.hpp"
 
 void SimulatorPrecise::initializeParticles(SDL_Renderer* r, unsigned int count)
 {
@@ -65,6 +66,10 @@ bool SimulatorPrecise::update(SDL_Renderer* s, unsigned int t)
 			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.8 * 0xFF);
 			SDL_RenderDrawPoint(s, px, py);
 		}
+		
+		memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer
+				positions.size() * sizeof(short) //recording buffer
+				) / 1000000.f;
 	}
 	else
 	{
@@ -78,6 +83,7 @@ bool SimulatorPrecise::update(SDL_Renderer* s, unsigned int t)
 		}
 
 		// update particle velocity and position and draw them
+		#pragma omp parallel for schedule(dynamic)
 		for (int i = 0; i < particlesCount; i++)
 		{
 			for (int k = i + 1; k < particlesCount; k++)
@@ -87,7 +93,7 @@ bool SimulatorPrecise::update(SDL_Renderer* s, unsigned int t)
 
 				double dist_sqr = distX * distX + distY * distY;
 				dist = sqrt(dist_sqr);
-				if (dist < 1)
+				if (dist < config::minForceDistance)
 					continue;
 
 				acc = (gForce * particles[k].mass) / dist_sqr;
@@ -113,11 +119,20 @@ bool SimulatorPrecise::update(SDL_Renderer* s, unsigned int t)
 				positions.push_back((short)(particles[i].x));
 				positions.push_back((short)(particles[i].y));
 			}
-			
-			// draw particle
-			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.8 * 0xFF);
-			SDL_RenderDrawPoint(s, particles[i].x, particles[i].y);
 		}
+			
+		// draw particle
+		if (drawParticles) {
+			for (int i = 0; i < particlesCount; i++)
+			{
+				SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.8 * 0xFF);
+				SDL_RenderDrawPoint(s, particles[i].x, particles[i].y);
+			}
+		}
+		
+		memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer
+				positions.size() * sizeof(short) //recording buffer
+				) / 1000000.f;
 	}
 
 	return true;

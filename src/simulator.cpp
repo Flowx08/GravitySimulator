@@ -9,6 +9,7 @@ Simulator::Simulator()
 {
 	movementSpeed = 1.0;
 	playlenght = 0;
+	memoryUsage = 0;
 	font = NULL;
 	
 	//settings
@@ -20,6 +21,7 @@ Simulator::Simulator()
 	playFromRecord = config::playFromRecord;
 	recordFilename = "recording.bin";
 	showUI = config::showUI;
+	drawParticles = config::drawParticles;
 }
 
 void Simulator::initializeParticles(SDL_Renderer* r, unsigned int count) {}
@@ -27,7 +29,7 @@ bool Simulator::update(SDL_Renderer* r, unsigned int t) {return false;}
 void Simulator::onEnd(unsigned int t) {};
 void Simulator::handleKeyDown(unsigned int key) {}
 
-void Simulator::drawUI(SDL_Renderer* r)
+void Simulator::drawUI(SDL_Renderer* r, unsigned int t)
 {
 	if (!showUI) return;
 
@@ -45,7 +47,7 @@ void Simulator::drawUI(SDL_Renderer* r)
 	SDL_SetRenderDrawColor(r, 0, 0, 0, 150);
 	SDL_RenderFillRect(r, &rect);
 
-	FC_Draw(font, r,  8,  8, "fps:\nparticles:\nViewX:\nViewY:\nViewZoom:");
-	FC_Draw(font, r,  8 + 100,  8, "%.3f\n%d\n%.2f\n%.2f\n%.3f",
-			FPS, particlesCount, viewX, viewY, viewZoom);
+	FC_Draw(font, r,  8,  8, "fps:\nt:\ncpu_cores:\nused_mem:\nparticles:\nview_cx:\nview_cy:\nview_zoom:\ngforce:\nmin_f_dist:\ndraw:");
+	FC_Draw(font, r,  8 + 100,  8, "%.4f\n%d\n%d\n%.2f MB\n%d\n%.4f\n%.4f\n%.4f\n%.4f\n%.4f\n%s",
+			FPS, t, config::cpuCores, memoryUsage, particlesCount, viewX, viewY, viewZoom, gForce, config::minForceDistance, drawParticles ? "true" : "false");
 }
