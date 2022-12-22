@@ -1,5 +1,4 @@
 #include "simulator.hpp"
-#include <SDL2_ttf/SDL_ttf.h>
 #include <SDL2/SDL.h>
 #include <assert.h>
 #include <type_traits>
@@ -14,7 +13,6 @@ Simulator::Simulator()
 	movementSpeed = 1.0;
 	playlenght = 0;
 	memoryUsage = 0;
-	font = NULL;
 	mode = 0;
 	t = 0;
 	paused = false;

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <math.h>
 #include "config.hpp"
+#include <stdio.h>
 
 std::vector<BHQuadTree> BHQuadTree::nodes = std::vector<BHQuadTree>(16);
 unsigned int BHQuadTree::usedNodes = 0;
@@ -47,6 +48,7 @@ BHQuadTree::BHQuadTree()
 	totalMass = 0;
 	pcount = 0;
 	particle = NULL;
+	usedNodes = 0;
 }
 
 BHQuadTree::BHQuadTree(float cx, float cy, float hd)
@@ -64,6 +66,7 @@ BHQuadTree::BHQuadTree(float cx, float cy, float hd)
 	totalMass = 0;
 	pcount = 0;
 	particle = NULL;
+	usedNodes = 0;
 }
 
 bool BHQuadTree::insert(Particle* p)

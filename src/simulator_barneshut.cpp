@@ -5,8 +5,6 @@
 #include "particle.hpp"
 #include "util.hpp"
 #include <algorithm>
-#include <arm/types.h>
-#include <sys/_types/_int32_t.h>
 
 void SimulatorBarnesHut::initializeParticles(Renderer& r, unsigned int count)
 {
@@ -91,7 +89,6 @@ bool SimulatorBarnesHut::update(Renderer& s)
 	for (int i = 0; i < particlesCount; i++)
 		BHQuadTree::computeAttraction(spaceTree, &particles[i], 0.9, gForce);
 
-
 	//update velocity and position
 	unsigned int boundarySize = 10;
 	for (int i = 0; i < particlesCount; i++) {
@@ -101,7 +98,6 @@ bool SimulatorBarnesHut::update(Renderer& s)
 		particles[i].y += particles[i].vy;
 		boundarySize = fmax(boundarySize, abs(particles[i].x - viewX));
 		boundarySize = fmax(boundarySize, abs(particles[i].y - viewY));
-
 	}
 
 	//draw particles

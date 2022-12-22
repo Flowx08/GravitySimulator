@@ -1,14 +1,13 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_timer.h>
 #include <cmath>
 #include <cstdio>
 #include <stdio.h>
 #include <numeric>
-#include <sys/syslimits.h>
 #include <vector>
 #include <iostream>
 #include "SDL2/SDL_render.h"
 #include "SDL2/SDL_stdinc.h"
-#include <SDL2_ttf/SDL_ttf.h>
 #include "SDL2/SDL_video.h"
 #include "particle.hpp"
 #include "simulator_precise.hpp"
@@ -16,10 +15,7 @@
 #include "util.hpp"
 #include "config.hpp"
 #include <omp.h>
-#include <OpenGL/gl3.h>
 #include "Renderer.hpp"
-
-
 
 int main(int argc, char* argv[]) {
 	
@@ -29,13 +25,8 @@ int main(int argc, char* argv[]) {
 	SDL_Window* window = NULL;
 
 	SDL_Init(SDL_INIT_EVERYTHING);              // Initialize SDL2
-	TTF_Init();
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-	omp_set_num_threads(config::cpuCores);
+	//omp_set_num_threads(config::cpuCores);
 	printf("CPU cores: %d\n", config::cpuCores);
 
 	//Get screen size
@@ -56,18 +47,19 @@ int main(int argc, char* argv[]) {
 			| SDL_WINDOW_FULLSCREEN
 			);
 
-
 	// Check that the window was successfully created
 	if (window == NULL) {
 		// In the case that the window could not be made...
 		printf("Could not create window: %s\n", SDL_GetError());
 		return -1;
 	}
+	printf("Window created!\n");
 	
 
 	//Create renderer
 	Renderer r;
 	r.init(window);
+	printf("Renderer created!\n");
 
 	//create simulator
 	if (std::string(config::mode) == "precise") simulator = (Simulator*)new SimulatorPrecise();
@@ -77,6 +69,7 @@ int main(int argc, char* argv[]) {
 	SDL_Event e;
 	Uint64 start, end;
 	bool running = true;
+	start = SDL_GetPerformanceCounter();
 	while (running) {
 
 		while (SDL_PollEvent(&e)) {
@@ -117,16 +110,16 @@ int main(int argc, char* argv[]) {
 
 		// And now we present everything we draw after the clear.
 		r.present();
-
+	
 		//compute elapsed time in ms
 		end = SDL_GetPerformanceCounter();
-		float elapsedMs = (end - start) / (float)SDL_GetPerformanceFrequency();
+		double elapsedMs = (end - start) / (double)SDL_GetPerformanceFrequency();
 
 		// Cap to 60 FPS
-		SDL_Delay(floor(16.66f - elapsedMs * 1000.0));
+		SDL_Delay(fmax(0.0, 16.66f - elapsedMs));
 
 		end = SDL_GetPerformanceCounter();
-		elapsedMs = (end - start) / (float)SDL_GetPerformanceFrequency();
+		elapsedMs = (end - start) / (double)SDL_GetPerformanceFrequency();
 		simulator->FPS = 1.f / elapsedMs;
 
 		start = SDL_GetPerformanceCounter();

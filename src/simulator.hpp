@@ -4,8 +4,6 @@
 #include "Renderer.hpp"
 #include <SDL2/SDL_keyboard.h>
 #include "SDL2/SDL_stdinc.h"
-#include "SDL_FontCache.h"
-#include <sys/_types/_int8_t.h>
 #include <vector>
 #include "particle.hpp"
 #include <string>
@@ -53,7 +51,6 @@ class Simulator
 		std::string inputText;
 
 		//UI
-		FC_Font* font;
 		bool showUI;
 		
 		//recording

@@ -4,12 +4,15 @@
 #include <sstream>
 #include "config.hpp"
 
-void SimulatorPrecise::initializeParticles(SDL_Renderer* r, unsigned int count)
+void SimulatorPrecise::initializeParticles(Renderer& r, unsigned int count)
 {
 	printf("Simulation: precise\n");
 
-	int windowWidth, windowHeight;
-	SDL_GetRendererOutputSize(r, &windowWidth, &windowHeight);
+	//Get screen size
+	SDL_DisplayMode dm;
+	SDL_GetCurrentDisplayMode(0, &dm);
+	Uint32 windowWidth = dm.w;
+	Uint32 windowHeight = dm.h;
 	
 	//setup simulator parameters
 	viewX = (float)windowWidth/2;
@@ -35,7 +38,7 @@ void SimulatorPrecise::initializeParticles(SDL_Renderer* r, unsigned int count)
 	}
 }
 
-bool SimulatorPrecise::update(SDL_Renderer* s)
+bool SimulatorPrecise::update(Renderer& s)
 {
 	float acc, dist, distX, distY;
 
@@ -84,8 +87,7 @@ bool SimulatorPrecise::update(SDL_Renderer* s)
 	if (drawParticles) {
 		for (int i = 0; i < particlesCount; i++)
 		{
-			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.8 * 0xFF);
-			SDL_RenderDrawPoint(s, particles[i].x, particles[i].y);
+			s.drawPoint(particles[i].x, particles[i].y, 1.0, 1.0, 1.0, (particles[i].mass / 2.1) * 0.8);
 		}
 	}
 

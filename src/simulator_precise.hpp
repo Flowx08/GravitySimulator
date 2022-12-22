@@ -8,8 +8,8 @@
 
 class SimulatorPrecise : public Simulator {
 	public:
-		void initializeParticles(SDL_Renderer* r, unsigned int count);
-		bool update(SDL_Renderer* r);
+		void initializeParticles(Renderer& r, unsigned int count);
+		bool update(Renderer& r);
 		void onEnd();
 
 };
