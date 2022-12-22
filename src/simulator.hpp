@@ -1,9 +1,11 @@
 #ifndef SIMULATOR_HPP
 #define SIMULATOR_HPP
 
-#include <SDL2/SDL_render.h>
+#include "Renderer.hpp"
 #include <SDL2/SDL_keyboard.h>
+#include "SDL2/SDL_stdinc.h"
 #include "SDL_FontCache.h"
+#include <sys/_types/_int8_t.h>
 #include <vector>
 #include "particle.hpp"
 #include <string>
@@ -12,17 +14,28 @@ class Simulator
 {
 	public:
 		Simulator();
-		virtual void initializeParticles(SDL_Renderer* r, unsigned int count);
-		virtual bool update(SDL_Renderer* r, unsigned int t);
-		virtual void onEnd(unsigned int t);
-		virtual void handleKeyDown(unsigned int key);
+	
+		void init(Renderer& r, unsigned int particlesCount);
+		bool step(Renderer& r);
+		void quit();
 
-		void drawUI(SDL_Renderer* r, unsigned int t);
+		void handleKeyDown(unsigned int key);
+		void handleTextInput(char c);
+
+		void drawUI(Renderer& r);
 
 		float FPS;
+
+	private:
+		virtual void initializeParticles(Renderer& r, unsigned int count);
+		virtual bool update(Renderer& r);
+		virtual void onEnd();
+		virtual void costumHandleKeyDown(unsigned int key);
+
 	
 	protected:
 		//parameters
+		unsigned int t;
 		Uint32 particlesCount;
 		float gForce;
 		float viewX;
@@ -33,6 +46,11 @@ class Simulator
 		bool drawParticles;
 		float movementSpeed;
 		std::vector<Particle> particles;
+		bool paused;
+
+		//input
+		unsigned int mode;
+		std::string inputText;
 
 		//UI
 		FC_Font* font;
@@ -45,7 +63,13 @@ class Simulator
 		bool playFromRecord;
 		std::string recordFilename;
 		unsigned int playlenght;
-		std::vector<short> positions;
+
+		std::vector<int32_t> startPositions;
+		std::vector<int32_t> pos;
+		std::vector<int32_t> prediction;
+		std::vector<int32_t> posDiffs;
+		std::vector<int32_t> velDiffs;
+		std::vector<int8_t> predictonErrors;
 
 		//hardware
 		double memoryUsage;

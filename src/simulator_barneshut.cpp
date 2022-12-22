@@ -5,16 +5,18 @@
 #include "particle.hpp"
 #include "util.hpp"
 #include <algorithm>
-#include <fstream>
-#include <sstream>
+#include <arm/types.h>
+#include <sys/_types/_int32_t.h>
 
-void SimulatorBarnesHut::initializeParticles(SDL_Renderer* r, unsigned int count)
+void SimulatorBarnesHut::initializeParticles(Renderer& r, unsigned int count)
 {
 	printf("Simulation: Barnes hut\n");
 	
-	//Get window size
-	int windowWidth, windowHeight;
-	SDL_GetRendererOutputSize(r, &windowWidth, &windowHeight);
+	//Get screen size
+	SDL_DisplayMode dm;
+	SDL_GetCurrentDisplayMode(0, &dm);
+	Uint32 windowWidth = dm.w;
+	Uint32 windowHeight = dm.h;
 	
 	//setup simulator parameters
 	drawTree = false;
@@ -23,7 +25,6 @@ void SimulatorBarnesHut::initializeParticles(SDL_Renderer* r, unsigned int count
 	viewY = (float)windowHeight/2;
 	viewHW = -(float)windowWidth/2;
 	viewHH = -(float)windowHeight/2;
-	viewZoom = 0.25;
 	particlesCount = count;
 	particles = std::vector<Particle>(particlesCount);
 
@@ -42,7 +43,7 @@ void SimulatorBarnesHut::initializeParticles(SDL_Renderer* r, unsigned int count
 		particles[i].y = windowHeight / 2.0 + sin(a) * d; 
 		particles[i].vx = sin(a) * 5.0 -2;
 		particles[i].vy = -cos(a) * 5.0 -4;
-		spaceTree->insert(&particles[i]);
+		if (!playFromRecord) spaceTree->insert(&particles[i]);
 	}
 	
 	for (int i = particlesCount/2; i < particlesCount; i++) {
@@ -54,17 +55,7 @@ void SimulatorBarnesHut::initializeParticles(SDL_Renderer* r, unsigned int count
 		particles[i].y = windowHeight / 2.0 + sin(a) * d; 
 		particles[i].vx = -sin(a) * 5.0 + 2;
 		particles[i].vy = cos(a) * 5.0 + 4;
-		spaceTree->insert(&particles[i]);
-	}
-	
-	//Load recorded simulation results
-	if (playFromRecord) {
-		std::ifstream filep(recordFilename, std::ios::in | std::ifstream::binary);
-		filep.read(reinterpret_cast<char *>(&playlenght), sizeof(unsigned int));
-		printf("playlengh: %d\n", playlenght);
-		positions = std::vector<short>(particlesCount * 2 * playlenght);
-		filep.read(reinterpret_cast<char *>(&positions[0]), sizeof(short) * particlesCount * 2 * playlenght);
-		printf("recording loaded!\n");
+		if (!playFromRecord) spaceTree->insert(&particles[i]);
 	}
 }
 
@@ -87,156 +78,69 @@ void SimulatorBarnesHut::drawTreeBoundaries(SDL_Renderer* s, BHQuadTree* node)
 	drawTreeBoundaries(s, node->southEast);
 }
 
-bool SimulatorBarnesHut::update(SDL_Renderer* s, unsigned int t)
+bool SimulatorBarnesHut::update(Renderer& s)
 {
-	if (playFromRecord && t == playlenght) {
-		return false;
-	}
-	if (record && recordLimit) {
-		if (t >= recordForT) return false;	
-	}
-	if (t % 10 == 0) {
-		printf("t: %d\n", t);
+	// reset acceleration for each particle
+	for (int i = 0; i < particlesCount; i++) {
+		particles[i].ax = 0;
+		particles[i].ay = 0;
 	}
 
-	const Uint8* keys = SDL_GetKeyboardState(NULL);
-	if (keys[SDL_SCANCODE_D]) {
-		viewX += movementSpeed;	
-		movementSpeed += 1.0;
-	}
-	else if (keys[SDL_SCANCODE_A]) {
-		viewX -= movementSpeed;
-		movementSpeed += 1.0;
-	}
-	else if (keys[SDL_SCANCODE_W]) {
-		viewY -= movementSpeed;	
-		movementSpeed += 1.0;
-	}
-	else if (keys[SDL_SCANCODE_S]) {
-		viewY += movementSpeed;	
-		movementSpeed += 1.0;
-	}
-	else
-	{
-		movementSpeed = 1.0;
-	}
-	if (keys[SDL_SCANCODE_E])
-		viewZoom *= 1.01;	
-	if (keys[SDL_SCANCODE_R])
-		viewZoom *= 0.99;	
+	//compute acceleration
+	#pragma omp parallel for schedule(dynamic)
+	for (int i = 0; i < particlesCount; i++)
+		BHQuadTree::computeAttraction(spaceTree, &particles[i], 0.9, gForce);
 
-	if (playFromRecord)
-	{
-		int px, py;
-		for (int i = 0; i < particlesCount; i++)
-		{
-			px = (int)positions[t * particlesCount * 2 + i * 2 + 0];
-			py = (int)positions[t * particlesCount * 2 + i * 2 + 1];
-			SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.6 * 0xFF);
-			SDL_RenderDrawPoint(s, (px - viewX) * viewZoom - viewHW, (py - viewY) * viewZoom - viewHH);
-		}
-		
-		memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer
-				BHQuadTree::usedNodes * sizeof(BHQuadTree) + //quadtree
-				positions.size() * sizeof(short) //recording buffer
-				) / 1000000.f;
-	}
-	else
-	{
-		// reset acceleration for each particle
-		for (int i = 0; i < particlesCount; i++)
-		{
-			particles[i].ax = 0;
-			particles[i].ay = 0;
-		}
-		
-		//compute acceleration
-		#pragma omp parallel for schedule(dynamic)
-		for (int i = 0; i < particlesCount; i++)
-			BHQuadTree::computeAttraction(spaceTree, &particles[i], 0.9, gForce);
 
-		//update velocity and position
-		unsigned int boundarySize = 10;
+	//update velocity and position
+	unsigned int boundarySize = 10;
+	for (int i = 0; i < particlesCount; i++) {
+		particles[i].vx += particles[i].ax;
+		particles[i].vy += particles[i].ay;
+		particles[i].x += particles[i].vx;
+		particles[i].y += particles[i].vy;
+		boundarySize = fmax(boundarySize, abs(particles[i].x - viewX));
+		boundarySize = fmax(boundarySize, abs(particles[i].y - viewY));
+
+	}
+
+	//draw particles
+	if (drawParticles) {
 		for (int i = 0; i < particlesCount; i++) {
-			particles[i].vx += particles[i].ax;
-			particles[i].vy += particles[i].ay;
-			particles[i].x += particles[i].vx;
-			particles[i].y += particles[i].vy;
-			boundarySize = fmax(boundarySize, abs(particles[i].x - viewX));
-			boundarySize = fmax(boundarySize, abs(particles[i].y - viewY));
-
-			if (record) {
-				positions.push_back((short)(particles[i].x));
-				positions.push_back((short)(particles[i].y));
-			}
+			s.drawPoint((particles[i].x-viewX)*viewZoom -viewHW,
+					(particles[i].y - viewY) * viewZoom - viewHH,
+					1.0, 1.0, 1.0, (particles[i].mass / 2.1) * 0.6);
 		}
+	}
 
-		//draw particles
-		if (drawParticles) {
-			for (int i = 0; i < particlesCount; i++)
-			{
-				SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.6 * 0xFF);
-				SDL_Rect r;
-				r.x = (particles[i].x - viewX) * viewZoom - viewHW;
-				r.y = (particles[i].y - viewY) * viewZoom - viewHH;
-				r.w = fmax(1.0, viewZoom);
-				r.h = fmax(1.0, viewZoom);
-				SDL_RenderFillRect(s, &r);
-				//SDL_RenderDrawPoint(s, (particles[i].x - viewX) * viewZoom - viewHW, (particles[i].y - viewY) * viewZoom - viewHH);
-			}
-		}
+	//update quadtree
+	spaceTree->clear(viewX, viewY, boundarySize);
+	for (int i = 0; i < particlesCount; i++)
+		spaceTree->insert(&particles[i]);
+	
+	//Update memory usage
+	memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer
+			BHQuadTree::usedNodes * sizeof(BHQuadTree) + //quadtree
+			startPositions.size() * sizeof(int32_t) +
+			predictonErrors.size() * sizeof(int8_t) //recording buffer
+			) / 1000000.f;
 
-		//update quadtree
-		spaceTree->clear(viewX, viewY, boundarySize);
-		for (int i = 0; i < particlesCount; i++)
-			spaceTree->insert(&particles[i]);
-
-		memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer
-				BHQuadTree::usedNodes * sizeof(BHQuadTree) + //quadtree
-				positions.size() * sizeof(short) //recording buffer
-				) / 1000000.f;
-		
-		//draw quadtree
-		if (drawTree) {
-			SDL_SetRenderDrawColor(s, 0x00, 0xFF, 0x00, 0xFF * 0.3);
-			drawTreeBoundaries(s, spaceTree);
-		}
+	//draw quadtree
+	if (drawTree) {
+		SDL_SetRenderDrawColor(s.getSDLRenderer(), 0x00, 0xFF, 0x00, 0xFF * 0.3);
+		drawTreeBoundaries(s.getSDLRenderer(), spaceTree);
 	}
 
 	return true;
 }
 
-void SimulatorBarnesHut::onEnd(unsigned int t)
+void SimulatorBarnesHut::onEnd()
 {
-	//save positions recording
-	if (record && !playFromRecord)
-	{
-		printf("Saving recording...\n");
-		std::ofstream filepos("recording.bin", std::ios::out | std::ofstream::binary);
-		filepos.write(reinterpret_cast<const char *>(&t), sizeof(int));
-		filepos.write(reinterpret_cast<const char *>(&positions[0]), sizeof(short) * positions.size());
-		printf("Saved recording!\n");
-	}
 }
 
-void SimulatorBarnesHut::handleKeyDown(unsigned int key)
+void SimulatorBarnesHut::costumHandleKeyDown(unsigned int key)
 {
-	/*
-	if (key == SDLK_d)
-		viewX += 0.1;	
-	if (key == SDLK_a)
-		viewX -= 0.1;
-	if (key == SDLK_w)
-		viewY -= 0.1;	
-	if (key == SDLK_s)
-		viewY += 0.1;	
-	if (key == SDLK_e)
-		viewZoom *= 1.1;	
-	if (key == SDLK_r)
-		viewZoom *= 0.9;	
-	*/
 	if (key == SDLK_t) {
 		drawTree = !drawTree;
 	}
-
 }

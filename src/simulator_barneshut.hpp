@@ -1,6 +1,7 @@
 #ifndef SIMULATOR_BARNESHUT_HPP
 #define SIMULATOR_BARNESHUT_HPP
 
+#include "Renderer.hpp"
 #include "SDL2/SDL_keyboard.h"
 #include "simulator.hpp"
 #include "particle.hpp"
@@ -10,10 +11,10 @@
 
 class SimulatorBarnesHut : public Simulator {
 	public:
-		void initializeParticles(SDL_Renderer* r, unsigned int count);
-		bool update(SDL_Renderer* r, unsigned int t);
-		void onEnd(unsigned int t);
-		void handleKeyDown(unsigned int key);
+		void initializeParticles(Renderer& r, unsigned int count);
+		bool update(Renderer& r);
+		void onEnd();
+		void costumHandleKeyDown(unsigned int key);
 	
 	private:
 		void drawTreeBoundaries(SDL_Renderer* s, BHQuadTree* node);

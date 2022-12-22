@@ -9,8 +9,8 @@
 class SimulatorPrecise : public Simulator {
 	public:
 		void initializeParticles(SDL_Renderer* r, unsigned int count);
-		bool update(SDL_Renderer* r, unsigned int t);
-		void onEnd(unsigned int t);
+		bool update(SDL_Renderer* r);
+		void onEnd();
 
 };
 
