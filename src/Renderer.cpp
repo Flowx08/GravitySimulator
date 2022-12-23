@@ -7,6 +7,7 @@
  //#include <GLES3/gl3.h>
  //#include <GL/glu.h>
  #include <GL/glew.h>
+ #include <GL/gl.h>
  #else
  #include <OpenGL/gl3.h>
  #include <OpenGL/glu.h>
@@ -72,7 +73,7 @@ void Renderer::init(SDL_Window* window) {
 
 	//Set OpenGL version
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	
 	//Initilize Opengl
@@ -82,10 +83,17 @@ void Renderer::init(SDL_Window* window) {
 	}
 	SDL_GL_SetSwapInterval(0);
 
+	char *glVersion = (char*)glGetString(GL_VERSION);
+	if (glVersion) {
+		printf("OpenGL version: %s\n", glVersion);
+	}
+
 #if defined(__linux__)
 	GLenum err = glewInit();
 	if (err != GLEW_OK)
 		exit(1); 
+	else
+		printf("GLEW version: %s\n", glewGetString(GLEW_VERSION));
 #endif
 
 	const float ratio = (float) windowWidth / (float) windowHeight;
@@ -98,19 +106,13 @@ void Renderer::init(SDL_Window* window) {
 
 	glClearColor( 0, 0, 0, 0 );
 
-	//glMatrixMode( GL_PROJECTION );
-	//glLoadIdentity( );
-	//glOrtho(0, windowWidth, windowHeight, 0, -1, 1);
-
-	//glMatrixMode(GL_MODELVIEW);
-	
 	//Initilize glText
 	if (!gltInit())
 	{
 		fprintf(stderr, "Failed to initialize glText\n");
 		return;
 	}
-	gltViewport(windowWidth, windowHeight);
+	//gltViewport(windowWidth, windowHeight);
 
 	//Initlize shader
 	shaderProgram.loadFromFile("./shaders/shader.vert", "./shaders/shader.frag");

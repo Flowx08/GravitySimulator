@@ -85,9 +85,11 @@ bool SimulatorBarnesHut::update(Renderer& s)
 	}
 
 	//compute acceleration
+	printf("A\n");
 	#pragma omp parallel for schedule(dynamic)
 	for (int i = 0; i < particlesCount; i++)
 		BHQuadTree::computeAttraction(spaceTree, &particles[i], 0.9, gForce);
+	printf("B\n");
 
 	//update velocity and position
 	unsigned int boundarySize = 10;
@@ -110,9 +112,12 @@ bool SimulatorBarnesHut::update(Renderer& s)
 	}
 
 	//update quadtree
+	printf("C\n");
 	spaceTree->clear(viewX, viewY, boundarySize);
+	printf("D\n");
 	for (int i = 0; i < particlesCount; i++)
 		spaceTree->insert(&particles[i]);
+	printf("E\n");
 	
 	//Update memory usage
 	memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer

@@ -19,8 +19,6 @@
 #include <omp.h>
 #include "Renderer.hpp"
 
-
-
 int main(int argc, char* argv[]) {
 	
 	srand((unsigned int)NULL);

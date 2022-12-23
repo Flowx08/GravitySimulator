@@ -5,13 +5,13 @@ namespace config
 {
 	//simulation
 	static const char* mode = "barneshut"; //"precise" or "barneshut"
-	static const unsigned int particlesCount = 30000;
-	static const bool drawParticles = true;
-	static const float gForce = 0.4;
+	static const unsigned int particlesCount = 1000000;
+	static const bool drawParticles = false;
+	static const float gForce = 0.26;
 	static const float minForceDistance = 4.0;
 
 	//hardware
-	static const unsigned int cpuCores = 6;
+	static const unsigned int cpuCores = 10;
 
 	//view
 	static const float startViewZoom = 0.2;	

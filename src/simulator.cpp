@@ -1,5 +1,4 @@
 #include "simulator.hpp"
-#include <SDL2_ttf/SDL_ttf.h>
 #include <SDL2/SDL.h>
 #include <assert.h>
 #include <type_traits>
@@ -260,8 +259,8 @@ bool Simulator::step(Renderer& r)
 					//compute and store prediction error
 					int32_t errX = (int32_t)particles[i].x - prediction[i * 2 + 0];
 					int32_t errY = (int32_t)particles[i].y - prediction[i * 2 + 1];
-					assert(errX > -100 && errX < 100);
-					assert(errY > -100 && errY < 100);
+					assert(errX > -120 && errX < 120);
+					assert(errY > -120 && errY < 120);
 					predictonErrors.push_back((int8_t)errX);
 					predictonErrors.push_back((int8_t)errY);
 				}

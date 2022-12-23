@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <math.h>
 #include "config.hpp"
+#include <stdio.h>
+#include <assert.h>
 
 std::vector<BHQuadTree> BHQuadTree::nodes = std::vector<BHQuadTree>(16);
 unsigned int BHQuadTree::usedNodes = 0;
@@ -47,6 +49,7 @@ BHQuadTree::BHQuadTree()
 	totalMass = 0;
 	pcount = 0;
 	particle = NULL;
+	usedNodes = 0;
 }
 
 BHQuadTree::BHQuadTree(float cx, float cy, float hd)
@@ -64,10 +67,12 @@ BHQuadTree::BHQuadTree(float cx, float cy, float hd)
 	totalMass = 0;
 	pcount = 0;
 	particle = NULL;
+	usedNodes = 0;
 }
 
 bool BHQuadTree::insert(Particle* p)
 {
+	assert(p != NULL);
 	// Ignore objects that do not belong in this quad tree
 	if (!boundary.containsPoint(*p))
 		return false; // object cannot be added
@@ -122,6 +127,10 @@ bool BHQuadTree::insert(Particle* p)
 	cyMass += p->y * p->mass;
 	totalMass += p->mass;
 	pcount++;
+	assert(northWest != NULL);
+	assert(northWest != NULL);
+	assert(southWest != NULL);
+	assert(southEast != NULL);
 	if (northWest->insert(p)) return true;
 	if (northEast->insert(p)) return true;
 	if (southWest->insert(p)) return true;
@@ -138,18 +147,11 @@ void BHQuadTree::subdivide()
 	southWest = new BHQuadTree(boundary.cx - boundary.hd/2, boundary.cy + boundary.hd/2, boundary.hd/2);
 	southEast = new BHQuadTree(boundary.cx + boundary.hd/2, boundary.cy + boundary.hd/2, boundary.hd/2);
 	usedNodes += 4;	
-	/*
-	northWest = getNewNode(boundary.cx - boundary.hd/2, boundary.cy - boundary.hd/2, boundary.hd/2);
-	northEast = getNewNode(boundary.cx + boundary.hd/2, boundary.cy - boundary.hd/2, boundary.hd/2);
-	southWest = getNewNode(boundary.cx - boundary.hd/2, boundary.cy + boundary.hd/2, boundary.hd/2);
-	southEast = getNewNode(boundary.cx + boundary.hd/2, boundary.cy + boundary.hd/2, boundary.hd/2);
-	*/
 	
-	northWest->insert(particle);
-	northEast->insert(particle);
-	southWest->insert(particle);
-	southEast->insert(particle);
-	particle = NULL;
+	if (northWest->insert(particle)) particle = NULL;
+	else if (northEast->insert(particle)) particle = NULL;
+	else if (southWest->insert(particle)) particle = NULL;
+	else if (southEast->insert(particle)) particle = NULL;
 }
 
 void BHQuadTree::__free(BHQuadTree* node)
@@ -183,6 +185,7 @@ void BHQuadTree::clear()
 	totalMass = 0;
 	pcount = 0;
 	particle = NULL;
+	usedNodes = 0;
 }
 
 void BHQuadTree::clear(float cx, float cy, float hd)
@@ -191,7 +194,6 @@ void BHQuadTree::clear(float cx, float cy, float hd)
 	boundary.cx = cx;
 	boundary.cy = cy;
 	boundary.hd = hd;
-	usedNodes = 0;
 }
 
 bool BHQuadTree::isLeaf()
