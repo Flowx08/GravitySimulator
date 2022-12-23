@@ -4,14 +4,14 @@
 namespace config
 {
 	//simulation
-	static const char* mode = "precise"; //"precise" or "barneshut"
-	static const unsigned int particlesCount = 1000;
+	static const char* mode = "barneshut"; //"precise" or "barneshut"
+	static const unsigned int particlesCount = 30000;
 	static const bool drawParticles = true;
-	static const float gForce = 0.23;
+	static const float gForce = 0.4;
 	static const float minForceDistance = 4.0;
 
 	//hardware
-	static const unsigned int cpuCores = 1;
+	static const unsigned int cpuCores = 6;
 
 	//view
 	static const float startViewZoom = 0.2;	

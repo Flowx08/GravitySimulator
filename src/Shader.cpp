@@ -1,6 +1,7 @@
 #include "Shader.hpp"
 #include <fstream>
 #include <iostream>
+#include <vector>
 
 #define GL_SILENCE_DEPRECATION
 #if defined(__linux__)
@@ -9,8 +10,6 @@
 #include <OpenGL/gl3.h>
 #include <OpenGL/glu.h>
 #endif
-
-#include <vector>
 
 std::string readFile(const char *filePath) {
     std::string content;
@@ -50,13 +49,11 @@ Shader::Shader(std::string vertexShaderPath, std::string fragmentShaderPath)
 
 void Shader::loadFromFile(std::string vertexShaderPath, std::string fragmentShaderPath)
 {
-	printf("Creating shaders...\n");
 	GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 
     // Read shaders
 
-	printf("Loading shaders source...\n");
     std::string vertShaderStr = readFile(vertexShaderPath.c_str());
     std::string fragShaderStr = readFile(fragmentShaderPath.c_str());
     const char *vertShaderSrc = vertShaderStr.c_str();

@@ -1,4 +1,5 @@
 #include "simulator.hpp"
+#include <SDL2_ttf/SDL_ttf.h>
 #include <SDL2/SDL.h>
 #include <assert.h>
 #include <type_traits>

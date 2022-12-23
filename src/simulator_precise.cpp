@@ -87,7 +87,9 @@ bool SimulatorPrecise::update(Renderer& s)
 	if (drawParticles) {
 		for (int i = 0; i < particlesCount; i++)
 		{
-			s.drawPoint(particles[i].x, particles[i].y, 1.0, 1.0, 1.0, (particles[i].mass / 2.1) * 0.8);
+
+			//SDL_SetRenderDrawColor(s, 0xFF, 0xFF, 0xFF, (particles[i].mass / 2.1) * 0.8 * 0xFF);
+			//SDL_RenderDrawPoint(s, particles[i].x, particles[i].y);
 		}
 	}
 

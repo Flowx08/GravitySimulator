@@ -1,21 +1,18 @@
 #include "Renderer.hpp"
 #include "SDL2/SDL_render.h"
 #include "SDL2/SDL_video.h"
-
-#define GL_SILENCE_DEPRECATION
-#if defined(__linux__)
-//#include <GLES3/gl3.h>
-//#include <GL/glu.h>
-#include <GL/glew.h>
-#else
-#include <OpenGL/gl3.h>
-#include <OpenGL/glu.h>
-#endif
-
 #include <iostream>
 
+#if defined(__linux__)
+ //#include <GLES3/gl3.h>
+ //#include <GL/glu.h>
+ #include <GL/glew.h>
+ #else
+ #include <OpenGL/gl3.h>
+ #include <OpenGL/glu.h>
+ #endif
+
 #define GLT_IMPLEMENTATION
-#define GLT_DEBUG_PRINT
 #include "gltext.h"
 
 // set the OpenGL orthographic projection matrix
@@ -84,7 +81,6 @@ void Renderer::init(SDL_Window* window) {
 		printf("Couldn't create OpenGL context\n");
 	}
 	SDL_GL_SetSwapInterval(0);
-	printf("OpenGL context created\n");
 
 #if defined(__linux__)
 	GLenum err = glewInit();
@@ -107,21 +103,17 @@ void Renderer::init(SDL_Window* window) {
 	//glOrtho(0, windowWidth, windowHeight, 0, -1, 1);
 
 	//glMatrixMode(GL_MODELVIEW);
-	checkGLError();
 	
 	//Initilize glText
-	printf("Initlizing glText...\n");
 	if (!gltInit())
 	{
-		printf("Failed to initialize glText\n");
+		fprintf(stderr, "Failed to initialize glText\n");
 		return;
 	}
 	gltViewport(windowWidth, windowHeight);
-	printf("glText initialized!\n");
 
 	//Initlize shader
 	shaderProgram.loadFromFile("./shaders/shader.vert", "./shaders/shader.frag");
-	printf("Shaders loaded!\n");
 	shaderProgram.apply();
 
 	//bind locations
@@ -151,7 +143,6 @@ void Renderer::init(SDL_Window* window) {
 	makeOrthoProj(windowHeight, 0, 0, windowWidth, -1, 1, matrix);
 	GLuint projmatLoc = glGetUniformLocation(shaderProgram.getProgram(), "projmat");
 	glUniformMatrix4fv(projmatLoc, 1, GL_TRUE, matrix);
-	printf("Initilization done!\n");
 
 	checkGLError();
 
@@ -190,7 +181,6 @@ void Renderer::clear()
 void Renderer::present()
 {
 	//Create vertex buffer
-	printf("%f  %f\n", verticies[0], verticies[1]);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * verticies.size(), &verticies[0], GL_STATIC_DRAW);
 	
@@ -202,8 +192,6 @@ void Renderer::present()
 	glDrawArrays(GL_POINTS, 0, verticies.size() / 2);
 	glFlush();
 	SDL_GL_SwapWindow(window);
-
-	checkGLError();
 }
 
 SDL_Renderer* Renderer::getSDLRenderer() {
