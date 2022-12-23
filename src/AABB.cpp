@@ -6,7 +6,7 @@ AABB::AABB()
 	cx = cy = hd = 0;
 }
 
-AABB::AABB(float cx, float cy, float hd)
+AABB::AABB(double cx, double cy, double hd)
 {
 	this->cx = cx;
 	this->cy = cy;
@@ -15,7 +15,7 @@ AABB::AABB(float cx, float cy, float hd)
 
 bool AABB::containsPoint(Particle& p) const
 {
-	if (p.x < cx - hd || p.x > cx + hd) return false;
-	if (p.y < cy - hd || p.y > cy + hd) return false;
+	if ((double)p.x < cx - hd || (double)p.x > cx + hd) return false;
+	if ((double)p.y < cy - hd || (double)p.y > cy + hd) return false;
 	return true;
 }

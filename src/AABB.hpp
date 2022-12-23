@@ -6,11 +6,11 @@
 //Axis aligned bounding box with center position and half dimension
 struct AABB
 {
-	float cx, cy; 
-	float hd;
+	double cx, cy; 
+	double hd;
 	
 	AABB();
-	AABB(float cx, float cy, float hd);
+	AABB(double cx, double cy, double hd);
 
 	//check if the particle is inside the AABB
 	bool containsPoint(Particle& p) const;

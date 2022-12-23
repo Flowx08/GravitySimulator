@@ -2,9 +2,11 @@
 #include "SDL2/SDL_keycode.h"
 #include "SDL2/SDL_stdinc.h"
 #include "bhquadtree.hpp"
+#include "config.hpp"
 #include "particle.hpp"
 #include "util.hpp"
 #include <algorithm>
+#include <omp.h>
 
 void SimulatorBarnesHut::initializeParticles(Renderer& r, unsigned int count)
 {
@@ -79,20 +81,23 @@ void SimulatorBarnesHut::drawTreeBoundaries(SDL_Renderer* s, BHQuadTree* node)
 bool SimulatorBarnesHut::update(Renderer& s)
 {
 	// reset acceleration for each particle
+	#pragma omp parallel for schedule(static)
 	for (int i = 0; i < particlesCount; i++) {
 		particles[i].ax = 0;
 		particles[i].ay = 0;
 	}
 
 	//compute acceleration
-	printf("A\n");
+	std::vector< std::vector<void*> > stacks = std::vector< std::vector<void*> >(config::cpuCores);
 	#pragma omp parallel for schedule(dynamic)
-	for (int i = 0; i < particlesCount; i++)
-		BHQuadTree::computeAttraction(spaceTree, &particles[i], 0.9, gForce);
-	printf("B\n");
+	for (int i = 0; i < particlesCount; i++) {
+		const int tid = omp_get_thread_num();
+		BHQuadTree::computeAttraction(spaceTree, &particles[i], 0.9, gForce, stacks[tid]);
+	}
 
 	//update velocity and position
 	unsigned int boundarySize = 10;
+	#pragma omp parallel for schedule(static)
 	for (int i = 0; i < particlesCount; i++) {
 		particles[i].vx += particles[i].ax;
 		particles[i].vy += particles[i].ay;
@@ -112,12 +117,9 @@ bool SimulatorBarnesHut::update(Renderer& s)
 	}
 
 	//update quadtree
-	printf("C\n");
 	spaceTree->clear(viewX, viewY, boundarySize);
-	printf("D\n");
 	for (int i = 0; i < particlesCount; i++)
 		spaceTree->insert(&particles[i]);
-	printf("E\n");
 	
 	//Update memory usage
 	memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer

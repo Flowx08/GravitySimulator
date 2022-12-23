@@ -33,7 +33,8 @@ class BHQuadTree
 		//acceleration of the particles. The parameter alpha controls the accuracy of
 		//the results. A value of alpha = 0 has perfect accuracy but N^2 complexity.
 		//Increasing alpha makes the computation faster but more approssimative.
-		static void computeAttraction(BHQuadTree* node, Particle* p, const float alpha, const float gForce);
+		static void computeAttraction(BHQuadTree* node, Particle* p, const float alpha, const float gForce,
+				std::vector<void*>& stack);
 
 		// Childrens
 		BHQuadTree* northWest;
@@ -46,6 +47,7 @@ class BHQuadTree
 		Particle* particle;
 		
 		static unsigned int usedNodes;
+		static std::vector< std::vector<void*> > stacks;
 
 	private:
 		//deallocate all nodes except root
