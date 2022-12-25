@@ -5,13 +5,13 @@ namespace config
 {
 	//simulation
 	static const char* mode = "barneshut"; //"precise" or "barneshut"
-	static const unsigned int particlesCount = 100000;
+	static const unsigned int particlesCount = 1500000;
 	static const bool drawParticles = true;
-	static const float gForce = 0.2;
+	static const float gForce = 0.36;
 	static const float minForceDistance = 4.0;
 
 	//hardware
-	static const unsigned int cpuCores = 8;
+	static const unsigned int cpuCores = 10;
 
 	//view
 	static const float startViewZoom = 0.2;	
@@ -20,11 +20,11 @@ namespace config
 	static const bool showUI = true;
 	
 	//recording
-	static const bool record = true;
-	static const bool recordLimit = true;
-	static const unsigned int recordForT = 60 * 10;
+	static const bool record = false;
+	static const bool recordLimit = false;
+	static const unsigned int recordForT = 60 * 11;
 	static const char* recordFilename = "recording.bin";
-	static const bool playFromRecord = false;
+	static const bool playFromRecord = true;
 
 	//barnes hut
 	static const float alpha = 0.9;

@@ -60,6 +60,7 @@ class Simulator
 		bool playFromRecord;
 		std::string recordFilename;
 		unsigned int playlenght;
+		unsigned long peId; 
 
 		std::vector<int32_t> startPositions;
 		std::vector<int32_t> pos;

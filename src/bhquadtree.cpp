@@ -94,7 +94,6 @@ bool BHQuadTree::insert(Particle* p)
 	stack.push_back((void*)this);
 		
 	while (stack.size() != 0) {
-		assert(stack.size() < 100);
 		BHQuadTree& node = *(BHQuadTree*)stack.back();
 		assert(&node != NULL);
 

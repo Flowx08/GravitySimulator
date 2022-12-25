@@ -15,6 +15,7 @@ Simulator::Simulator()
 	memoryUsage = 0;
 	mode = 0;
 	t = 0;
+	peId = 0;
 	paused = false;
 	
 	//settings
@@ -38,7 +39,9 @@ void Simulator::quit()
 	{
 		printf("Saving recording...\n");
 		std::ofstream filepos("recording.bin", std::ios::out | std::ofstream::binary);
+		unsigned long peBufSize = predictonErrors.size();
 		filepos.write(reinterpret_cast<const char *>(&t), sizeof(int));
+		filepos.write(reinterpret_cast<const char *>(&peBufSize), sizeof(unsigned long));
 		filepos.write(reinterpret_cast<const char *>(&startPositions[0]), sizeof(int32_t) * startPositions.size());
 		filepos.write(reinterpret_cast<const char *>(&predictonErrors[0]), sizeof(int8_t) * predictonErrors.size());
 		printf("Saved recording!\n");
@@ -54,16 +57,18 @@ void Simulator::init(Renderer& r, unsigned int particlesCount)
 		std::ifstream filep(recordFilename, std::ios::in | std::ifstream::binary);
 		filep.read(reinterpret_cast<char *>(&playlenght), sizeof(unsigned int));
 		printf("playlengh: %d\n", playlenght);
+		
+		unsigned long peBufSize;
+		filep.read(reinterpret_cast<char *>(&peBufSize), sizeof(unsigned long));
 
 		startPositions = std::vector<int32_t>(particlesCount * 2 * 3);
 		filep.read(reinterpret_cast<char *>(&startPositions[0]), sizeof(int32_t) * startPositions.size());
 		
-		predictonErrors = std::vector<int8_t>(particlesCount * 2 * (playlenght - 3));
-		filep.read(reinterpret_cast<char *>(&predictonErrors[0]), sizeof(int8_t) * predictonErrors.size());
+		predictonErrors = std::vector<int8_t>(peBufSize);
+		filep.read(reinterpret_cast<char *>(&predictonErrors[0]), sizeof(int8_t) * peBufSize);
 
 		printf("recording loaded!\n");
 	}
-	
 	
 	//store buffers fore encoding and decoding compressed data
 	pos = std::vector<int32_t>(particlesCount * 2);
@@ -78,6 +83,17 @@ bool Simulator::step(Renderer& r)
 	}
 	if (record && recordLimit) {
 		if (t >= recordForT) return false;	
+	}
+
+	if (record && (t % 100 == 0 && t != 0)) {
+		printf("Saving recording...\n");
+		std::ofstream filepos("recording.bin", std::ios::out | std::ofstream::binary);
+		unsigned long peBufSize = predictonErrors.size();
+		filepos.write(reinterpret_cast<const char *>(&t), sizeof(int));
+		filepos.write(reinterpret_cast<const char *>(&peBufSize), sizeof(unsigned long));
+		filepos.write(reinterpret_cast<const char *>(&startPositions[0]), sizeof(int32_t) * startPositions.size());
+		filepos.write(reinterpret_cast<const char *>(&predictonErrors[0]), sizeof(int8_t) * predictonErrors.size());
+		printf("Saved recording!\n");
 	}
 
 	//Handle movement
@@ -109,7 +125,6 @@ bool Simulator::step(Renderer& r)
 	if (keys[SDL_SCANCODE_R])
 		viewZoom *= 0.99;	
 
-	
 	if (playFromRecord)
 	{
 
@@ -142,8 +157,51 @@ bool Simulator::step(Renderer& r)
 				for (int i = 0; i < particlesCount; i++)
 				{
 					//compute next point position based on prediction + prediction error
-					fx = prediction[i * 2 + 0] + predictonErrors[(i + particlesCount * (t - 3)) * 2 + 0];
-					fy = prediction[i * 2 + 1] + predictonErrors[(i + particlesCount * (t - 3)) * 2 + 1];
+					int16_t eX;
+					int16_t eY;
+					
+					//decode X
+					int8_t b1 = predictonErrors[peId++];
+					bool hres = (b1 >> 7) & 1U;
+					bool sign = (b1 >> 6) & 1U;
+					b1 &= ~(1UL << 7); //clean bits
+					b1 &= ~(1UL << 6);
+					if (hres)
+					{
+						int8_t b2 = predictonErrors[peId++];
+						int16_t val = b2 + ((int32_t)b1 << 8);
+						if (sign) val = -val;
+						eX = val;
+					}
+					else
+					{
+						int16_t val = b1;
+						if (sign) val = -val;
+						eX = val;
+					}
+					
+					//decode Y
+					b1 = predictonErrors[peId++];
+					hres = (b1 >> 7) & 1U;
+					sign = (b1 >> 6) & 1U;
+					b1 &= ~(1UL << 7); //clean bits
+					b1 &= ~(1UL << 6);
+					if (hres)
+					{
+						int8_t b2 = predictonErrors[peId++];
+						int16_t val = b2 + ((int32_t)b1 << 8);
+						if (sign) val = -val;
+						eY = val;
+					}
+					else
+					{
+						int16_t val = b1;
+						if (sign) val = -val;
+						eY = val;
+					}
+
+					fx = prediction[i * 2 + 0] + eX;
+					fy = prediction[i * 2 + 1] + eY;
 
 					//update statistics
 					int32_t vx = (int32_t)fx - pos[i * 2 + 0];
@@ -217,6 +275,12 @@ bool Simulator::step(Renderer& r)
 
 		}
 
+		//Update memory usage
+		memoryUsage = (particlesCount * sizeof(Particle) + //particles buffer
+				startPositions.size() * sizeof(int32_t) +
+				predictonErrors.size() * sizeof(int8_t) //recording buffer
+				) / 1000000.f;
+
 	}
 	else
 	{
@@ -259,10 +323,80 @@ bool Simulator::step(Renderer& r)
 					//compute and store prediction error
 					int32_t errX = (int32_t)particles[i].x - prediction[i * 2 + 0];
 					int32_t errY = (int32_t)particles[i].y - prediction[i * 2 + 1];
-					assert(errX > -120 && errX < 120);
-					assert(errY > -120 && errY < 120);
-					predictonErrors.push_back((int8_t)errX);
-					predictonErrors.push_back((int8_t)errY);
+					assert(abs(errX) < 16384);
+					assert(abs(errY) < 16384);
+
+					//encode X axis
+					if (fabs(errX) < 64)
+					{
+						bool sign = errX < 0 ? true : false;
+
+						//extract first byte
+						int8_t b_low = (int8_t) abs(errX);
+						
+						//set high resolution bit to 0
+						b_low &= ~(1UL << 7);
+
+						//Set sign bit
+						if (sign) b_low |= 1UL << 6;
+						else b_low &= ~(1UL << 6);
+
+						predictonErrors.push_back(b_low);
+					}
+					else
+					{
+						bool sign = errX < 0 ? true : false;
+
+						//extract first 2 bytes
+						int8_t b_low = (int8_t) abs(errX);
+						int8_t b_high = (int8_t) (abs(errX) >> 8);
+
+						//set high resolution bit to 1
+						b_high |= 1UL << 7;
+
+						//Set sign bit
+						if (sign) b_high |= 1UL << 6;
+						else b_high &= ~(1UL << 6);
+
+						predictonErrors.push_back(b_high);
+						predictonErrors.push_back(b_low);
+					}
+					
+					//encode Y axis
+					if (fabs(errY) < 64)
+					{
+						bool sign = errY < 0 ? true : false;
+
+						//extract first byte
+						int8_t b_low = (int8_t) abs(errY);
+						
+						//set high resolution bit to 0
+						b_low &= ~(1UL << 7);
+
+						//Set sign bit
+						if (sign) b_low |= 1UL << 6;
+						else b_low &= ~(1UL << 6);
+
+						predictonErrors.push_back(b_low);
+					}
+					else
+					{
+						bool sign = errY < 0 ? true : false;
+
+						//extract first 2 bytes
+						int8_t b_low = (int8_t) abs(errY);
+						int8_t b_high = (int8_t) (abs(errY) >> 8);
+
+						//set high resolution bit to 1
+						b_high |= 1UL << 7;
+
+						//Set sign bit
+						if (sign) b_high |= 1UL << 6;
+						else b_high &= ~(1UL << 6);
+
+						predictonErrors.push_back(b_high);
+						predictonErrors.push_back(b_low);
+					}
 				}
 			}
 		}
